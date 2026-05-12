@@ -37,6 +37,9 @@ service cloud.firestore {
         && (!('generatedImageUrl' in data) || (data.generatedImageUrl is string && data.generatedImageUrl.size() <= 5000000))
         && data.status is string && data.status.size() <= 50
         && (!('scheduledFor' in data) || data.scheduledFor is timestamp)
+        && (!('recurring' in data) || (data.recurring is string && data.recurring.size() <= 20))
+        && (!('reach' in data) || data.reach is number)
+        && (!('engagement' in data) || data.engagement is number)
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -78,7 +81,7 @@ service cloud.firestore {
           && isValidSocialContent(incoming())
           && incoming().workspaceId == workspaceId
           && isWorkspaceOwner()
-          && incoming().keys().size() <= 9
+          && incoming().keys().size() <= 12
           && incoming().createdAt == request.time
           && incoming().updatedAt == request.time;
           
@@ -92,7 +95,7 @@ service cloud.firestore {
           && incoming().updatedAt == request.time
           && (
              // Edit content action
-             incoming().diff(existing()).affectedKeys().hasOnly(['generatedText', 'promptContext', 'generatedImageUrl', 'status', 'scheduledFor', 'updatedAt'])
+             incoming().diff(existing()).affectedKeys().hasOnly(['generatedText', 'promptContext', 'generatedImageUrl', 'status', 'scheduledFor', 'recurring', 'updatedAt'])
           );
           
         allow delete: if isVerified() && isValidId(workspaceId) && isValidId(contentId) && isWorkspaceOwner();

@@ -35,6 +35,10 @@ interface SocialContent {
   generatedText: string;
   generatedImageUrl?: string;
   status: string;
+  reach?: number;
+  engagement?: number;
+  scheduledFor?: any;
+  recurring?: string | null;
   createdAt: any;
 }
 
@@ -235,6 +239,9 @@ export default function WorkspacePage() {
       }
 
       // Save to Firestore after stream completes
+      const simulatedReach = Math.floor(Math.random() * 5000) + 500;
+      const simulatedEngagement = Math.floor(simulatedReach * (Math.random() * 0.1 + 0.05));
+      
       const newDocRef = await addDoc(collection(db, 'workspaces', workspace.id, 'contents'), {
         workspaceId: workspace.id,
         platform: generateForm.platform,
@@ -242,12 +249,14 @@ export default function WorkspacePage() {
         generatedText: streamedText,
         generatedImageUrl: streamedImageUrl || null,
         status: 'Draft',
+        reach: simulatedReach,
+        engagement: simulatedEngagement,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
       // replace temp with actual
-      setContents(prev => prev.map(c => c.id === tempId ? { ...c, id: newDocRef.id } : c));
+      setContents(prev => prev.map(c => c.id === tempId ? { ...c, id: newDocRef.id, reach: simulatedReach, engagement: simulatedEngagement } : c));
 
       toast.success('Content generated!');
       setGenerateForm({ ...generateForm, topic: '' }); 

@@ -27,6 +27,9 @@
         "generatedImageUrl": { "type": "string", "description": "Optional AI-generated image URL." },
         "status": { "type": "string", "description": "Draft, Scheduled, or Published." },
         "scheduledFor": { "type": "number", "description": "Optional timestamp for scheduling." },
+        "recurring": { "type": "string", "description": "Optional recurring schedule rule like daily, weekly." },
+        "reach": { "type": "number", "description": "Simulated reach metrics." },
+        "engagement": { "type": "number", "description": "Simulated engagement metrics." },
         "createdAt": { "type": "number", "description": "Creation timestamp." },
         "updatedAt": { "type": "number", "description": "Last update timestamp." }
       },
