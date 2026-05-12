@@ -9,34 +9,57 @@ interface AnalyticsViewProps {
 
 export default function AnalyticsView({ contents }: AnalyticsViewProps) {
   const stats = useMemo(() => {
-    // Generate some mock stats based on content count since we don't have real engagement
-    // In a real app this would come from a social media API
-    const baseViews = contents.length * 1500;
-    const baseEngagement = contents.length * 120;
+    let totalViews = 0;
+    let totalEngagement = 0;
+    const platformCount: Record<string, number> = {};
+
+    contents.forEach(c => {
+      // If we had real data, we'd add c.reach and c.engagement here
+      totalViews += c.reach || 0;
+      totalEngagement += c.engagement || 0;
+      
+      platformCount[c.platform] = (platformCount[c.platform] || 0) + 1;
+    });
+
     return {
-      totalViews: baseViews + Math.floor(Math.random() * 500),
-      totalEngagement: baseEngagement + Math.floor(Math.random() * 100),
-      growth: '+12.5%',
-      topPlatform: contents.reduce((acc, curr) => {
-        acc[curr.platform] = (acc[curr.platform] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
+      totalViews,
+      totalEngagement,
+      growth: '+0%', // In a real app, calculate from previous period
+      topPlatform: platformCount
     };
   }, [contents]);
 
   const topPlatformName = Object.entries(stats.topPlatform).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || 'N/A';
 
   const chartData = useMemo(() => {
-    return [
-      { name: 'Mon', views: 4000, engagement: 240 },
-      { name: 'Tue', views: 3000, engagement: 139 },
-      { name: 'Wed', views: 2000, engagement: 980 },
-      { name: 'Thu', views: 2780, engagement: 390 },
-      { name: 'Fri', views: 1890, engagement: 480 },
-      { name: 'Sat', views: 2390, engagement: 380 },
-      { name: 'Sun', views: 3490, engagement: 430 },
-    ];
-  }, []);
+    // Show last 7 days of activity
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    
+    // Initialize last 7 days
+    const dataMap: Record<string, { name: string, posts: number, reach: number, engagement: number, fullDate: string }> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dayName = days[d.getDay()];
+      const dateString = d.toISOString().split('T')[0];
+      dataMap[dateString] = { name: dayName, posts: 0, reach: 0, engagement: 0, fullDate: dateString };
+    }
+
+    // Populate data
+    contents.forEach(c => {
+      if (c.createdAt?.toDate) {
+        const dateString = new Date(c.createdAt.toDate()).toISOString().split('T')[0];
+        if (dataMap[dateString]) {
+          dataMap[dateString].posts += 1;
+          dataMap[dateString].reach += c.reach || 0;
+          dataMap[dateString].engagement += c.engagement || 0;
+        }
+      }
+    });
+
+    return Object.values(dataMap);
+  }, [contents]);
 
   return (
     <div className="space-y-6">
@@ -53,9 +76,7 @@ export default function AnalyticsView({ contents }: AnalyticsViewProps) {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <TrendingUp className="h-4 w-4 text-green-400 mr-1" />
-              <span className="text-green-400 font-medium">{stats.growth}</span>
-              <span className="text-neutral-500 ml-2">vs last week</span>
+              <span className="text-neutral-500">Live data</span>
             </div>
           </CardContent>
         </Card>
@@ -72,9 +93,7 @@ export default function AnalyticsView({ contents }: AnalyticsViewProps) {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <TrendingUp className="h-4 w-4 text-green-400 mr-1" />
-              <span className="text-green-400 font-medium">+8.2%</span>
-              <span className="text-neutral-500 ml-2">vs last week</span>
+              <span className="text-neutral-500">Live data</span>
             </div>
           </CardContent>
         </Card>
@@ -117,20 +136,20 @@ export default function AnalyticsView({ contents }: AnalyticsViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="bg-neutral-900 border-neutral-800">
           <CardHeader>
-            <CardTitle className="text-neutral-200">Reach & Views Overview</CardTitle>
-            <CardDescription className="text-neutral-500">Daily views across all scheduled posts</CardDescription>
+            <CardTitle className="text-neutral-200">Content Generation Output</CardTitle>
+            <CardDescription className="text-neutral-500">Posts generated over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
                 <XAxis dataKey="name" stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} />
-                <YAxis stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} />
+                <YAxis stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#171717', borderColor: '#262626', borderRadius: '8px' }}
                   itemStyle={{ color: '#e5e5e5' }}
                 />
-                <Bar dataKey="views" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="posts" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -138,20 +157,21 @@ export default function AnalyticsView({ contents }: AnalyticsViewProps) {
 
         <Card className="bg-neutral-900 border-neutral-800">
            <CardHeader>
-            <CardTitle className="text-neutral-200">Engagement Trend</CardTitle>
-            <CardDescription className="text-neutral-500">Likes, comments and shares over time</CardDescription>
+            <CardTitle className="text-neutral-200">Engagement & Reach Trend</CardTitle>
+            <CardDescription className="text-neutral-500">Combined data over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
                 <XAxis dataKey="name" stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} />
-                <YAxis stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} />
+                <YAxis stroke="#525252" tick={{fill: '#a3a3a3'}} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#171717', borderColor: '#262626', borderRadius: '8px' }}
                   itemStyle={{ color: '#e5e5e5' }}
                 />
-                <Line type="monotone" dataKey="engagement" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="engagement" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', strokeWidth: 2 }} activeDot={{ r: 6 }} name="Engagement" />
+                <Line type="monotone" dataKey="reach" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} name="Reach" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
