@@ -1,0 +1,102 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} { 
+      allow read, write: if false; 
+    }
+    
+    // --- Primitives ---
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && (request.auth.token.email_verified == true || request.auth.provider == 'anonymous' || !('email_verified' in request.auth.token)); }
+
+    // --- Validation Helpers ---
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['name', 'ownerId', 'createdAt', 'updatedAt']) 
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!('industry' in data) || (data.industry is string && data.industry.size() <= 100))
+        && (!('targetAudience' in data) || (data.targetAudience is string && data.targetAudience.size() <= 200))
+        && (!('tone' in data) || (data.tone is string && data.tone.size() <= 50))
+        && data.ownerId is string && data.ownerId == request.auth.uid
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSocialContent(data) {
+       return data.keys().hasAll(['workspaceId', 'platform', 'generatedText', 'status', 'createdAt', 'updatedAt'])
+        && data.workspaceId is string && isValidId(data.workspaceId)
+        && data.platform is string && data.platform.size() <= 50
+        && (!('promptContext' in data) || (data.promptContext is string && data.promptContext.size() <= 5000))
+        && data.generatedText is string && data.generatedText.size() <= 20000
+        && (!('generatedImageUrl' in data) || (data.generatedImageUrl is string && data.generatedImageUrl.size() <= 5000000))
+        && data.status is string && data.status.size() <= 50
+        && (!('scheduledFor' in data) || data.scheduledFor is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+    
+    // --- Collections ---
+    match /workspaces/{workspaceId} {
+      allow get: if isVerified() && isValidId(workspaceId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      
+      allow create: if isVerified() 
+        && isValidId(workspaceId)
+        && isValidWorkspace(incoming())
+        && incoming().keys().size() <= 7 
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+        
+      allow update: if isVerified() 
+        && isValidId(workspaceId)
+        && isValidWorkspace(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'industry', 'targetAudience', 'tone', 'updatedAt']);
+        
+      allow delete: if isVerified() && isValidId(workspaceId) && existing().ownerId == request.auth.uid;
+      
+      match /contents/{contentId} {
+        function isWorkspaceOwner() {
+          return exists(/databases/$(database)/documents/workspaces/$(workspaceId)) && 
+                 get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+        }
+
+        allow get: if isVerified() && isValidId(workspaceId) && isValidId(contentId) && isWorkspaceOwner();
+        allow list: if isVerified() && isValidId(workspaceId) && isWorkspaceOwner();
+        
+        allow create: if isVerified() 
+          && isValidId(workspaceId)
+          && isValidId(contentId)
+          && isValidSocialContent(incoming())
+          && incoming().workspaceId == workspaceId
+          && isWorkspaceOwner()
+          && incoming().keys().size() <= 9
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+          
+        allow update: if isVerified()
+          && isValidId(workspaceId)
+          && isValidId(contentId)
+          && isValidSocialContent(incoming())
+          && isWorkspaceOwner()
+          && incoming().workspaceId == existing().workspaceId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+             // Edit content action
+             incoming().diff(existing()).affectedKeys().hasOnly(['generatedText', 'promptContext', 'generatedImageUrl', 'status', 'scheduledFor', 'updatedAt'])
+          );
+          
+        allow delete: if isVerified() && isValidId(workspaceId) && isValidId(contentId) && isWorkspaceOwner();
+      }
+    }
+  }
+}

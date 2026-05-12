@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "A brand or project workspace containing business context.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the workspace/brand." },
+        "industry": { "type": "string", "description": "The industry category of the business." },
+        "targetAudience": { "type": "string", "description": "Who the business sells to." },
+        "tone": { "type": "string", "description": "The preferred content tone (e.g., Professional, Playful)." },
+        "ownerId": { "type": "string", "description": "UID of the user who owns the workspace." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." },
+        "updatedAt": { "type": "number", "description": "Last update timestamp." }
+      },
+      "required": ["name", "ownerId", "createdAt", "updatedAt"]
+    },
+    "SocialContent": {
+      "title": "Social Content",
+      "description": "Generated AI content for a specific platform.",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string", "description": "ID of the parent workspace." },
+        "platform": { "type": "string", "description": "Target platform (LinkedIn, Twitter, Instagram)." },
+        "promptContext": { "type": "string", "description": "The topic or goal for this specific generation." },
+        "generatedText": { "type": "string", "description": "The AI-generated text." },
+        "generatedImageUrl": { "type": "string", "description": "Optional AI-generated image URL." },
+        "status": { "type": "string", "description": "Draft, Scheduled, or Published." },
+        "scheduledFor": { "type": "number", "description": "Optional timestamp for scheduling." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." },
+        "updatedAt": { "type": "number", "description": "Last update timestamp." }
+      },
+      "required": ["workspaceId", "platform", "generatedText", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "Top-level collection holding all user workspaces."
+    },
+    "workspaces/{workspaceId}/contents/{contentId}": {
+      "schema": { "$ref": "#/entities/SocialContent" },
+      "description": "Subcollection under workspaces holding generated posts."
+    }
+  }
+}
