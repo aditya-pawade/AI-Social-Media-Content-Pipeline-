@@ -2,9 +2,8 @@
 
 An end-to-end AI-powered content generation studio that enables marketers, social media managers, and creators to conceptualize, generate, schedule, and analyze their social media content collaboratively in one place.
 
-## 🎯 Project Objectives & Evaluation Criteria
-
-The objective of these assignments is not just to test coding ability, but to evaluate: 
+## 🎯 Project Objectives 
+ 
 - **System design thinking**: Architected a robust, full-stack application separating concerns between the client-side React SPA, an Express middleware server, and a scalable Firebase backend. Data models are isolated securely by workspaces.
 - **Frontend/backend engineering**: Utilized React 18, Vite, and Tailwind CSS for a highly responsive, modern frontend. The backend leverages Express via a custom SSR/middleware proxy architecture and Firebase services for serverless database/authentication.
 - **AI integration skills**: Deeply integrated the `@google/genai` SDK using streaming (Server-Sent Events equivalent via standard async iterators) to provide real-time AI content generation, reducing perceived latency. Structured prompts enforce brand identity and platform constraints, optionally generating images.
@@ -12,14 +11,7 @@ The objective of these assignments is not just to test coding ability, but to ev
 - **Problem-solving ability**: Solved complex user-experience challenges like real-time AI text streaming with complex React state management, dynamic data visualization linking generation output with simulated engagement metrics, and secure, isolated user data management.
 - **Product understanding**: Created a continuous user journey: from workspace creation to AI generation, scheduling on a calendar, and monitoring output through an analytics dashboard. Designed specifically for the mental model of a social media manager.
 - **Code quality and architecture**: Maintained a clean, scalable folder structure (`src/components`, `src/pages`, `src/services`). Enforced TypeScript typing across the application for strict data shapes, utilizing reusable UI components and custom hooks where appropriate.
-
-### 🏆 How We Met the Evaluation Focus
-marketing
-- **System Design Thinking & Architecture**: We separated concerns using a layered architecture: a reactive frontend (React), an intermediate express server for robust production serving, and a highly secure serverless backend (Firestore/Firebase Auth). The implementation of distinct logic streams (UI components, services, page layouts) ensures maintainability.
-- **AI Integration**: We implemented streaming text generation using the `@google/genai` SDK to dramatically reduce perceived latency, providing immediate feedback. We also integrated prompt-driven image generation. Both are highly context-aware, dynamically constructing prompts based on user-defined workspace brand identities and target social platforms.
-- **Scalable Structure**: By structuring the database with denormalized, hierarchical paths (`workspaces/{workspaceId}/contents`), we ensure queries remain lightweight O(N) operations regardless of total application scale. We also fortified the data layer with strict Zero-Trust ABAC Firestore rules to prevent unauthorized access or payload manipulation at scale.
-- **Clean UI/UX**: We crafted a premium, dark-themed dashboard tailored for  professionals using Tailwind CSS and shadcn/ui. Complex user flows, such as real-time AI generation, calendar scheduling, and analytics visualization, are handled fluidly with immediate visual feedback, avoiding jarring page reloads.
-
+  
 ## 🌟 Features
 
 - **Workspace Management**: Organize your campaigns, clients, or brands in isolated workspaces.
